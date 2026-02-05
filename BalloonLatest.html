@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Castle Challenge: Indian Flag Edition</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Bungee&family=Dancing+Script:wght@700&family=Cinzel:wght@900&display=swap" rel="stylesheet">
+
+  <style>
+    body{
+      margin:0; height:100vh; display:flex; align-items:center; justify-content:center;
+      background:#000; overflow:hidden; font-family:'Cinzel', serif;
+    }
+
+    #game-container{
+      position:relative;
+      width:420px; height:650px;
+      border:6px solid #d4af37;
+      box-shadow:0 0 80px rgba(212,175,55,0.35);
+      background:#000;
+      overflow:hidden;
+      isolation:isolate;
+    }
+
+    canvas{ display:block; cursor:crosshair; touch-action:manipulation; }
+
+    /* ===== Start theme (gold/black glass) ===== */
+    .glassy-theme{
+      background:
+        radial-gradient(circle at 15% 20%, rgba(212,175,55,0.20), transparent 40%),
+        radial-gradient(circle at 75% 30%, rgba(255,255,255,0.12), transparent 45%),
+        radial-gradient(circle at 50% 90%, rgba(0,128,255,0.10), transparent 55%),
+        linear-gradient(135deg, #000 10%, #090909 60%, #000 100%);
+    }
+
+    .bg-glow{
+      position:absolute; inset:-40px; z-index:0;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(212,175,55,0.18), transparent 55%),
+        radial-gradient(circle at 70% 70%, rgba(255,255,255,0.10), transparent 50%);
+      filter:blur(10px);
+      animation:slowPulse 5.5s ease-in-out infinite;
+      opacity:0.9;
+    }
+    @keyframes slowPulse{
+      0%,100%{ transform:scale(1); opacity:0.85; }
+      50%{ transform:scale(1.03); opacity:1; }
+    }
+
+    .glass-card{
+      position:relative; z-index:2;
+      width:min(360px, 90%);
+      padding:26px 20px;
+      border-radius:22px;
+      background:rgba(255,255,255,0.07);
+      border:1px solid rgba(255,255,255,0.16);
+      backdrop-filter:blur(12px);
+      -webkit-backdrop-filter:blur(12px);
+      box-shadow:0 24px 70px rgba(0,0,0,0.55);
+      text-align:center;
+      color:#fff;
+    }
+
+    .castle-title{
+      margin:0;
+      font-family:'Cinzel Decorative';
+      letter-spacing:2px;
+      font-size:22px;
+      color:#fff;
+      text-shadow:0 0 10px #d4af37;
+    }
+    .gold-glow{ color:#d4af37; text-shadow:0 0 15px rgba(212,175,55,0.8); }
+
+    .btn-royal{
+      margin-top:16px;
+      padding:14px 34px;
+      border-radius:14px;
+      font-family:'Cinzel Decorative';
+      font-size:18px;
+      font-weight:900;
+      cursor:pointer;
+      border:1px solid rgba(255,255,255,0.85);
+      background:linear-gradient(135deg, #d4af37, #fff);
+      color:#000;
+      box-shadow:0 10px 30px rgba(212,175,55,0.25);
+      transition:0.22s;
+    }
+    .btn-royal:hover{ transform:translateY(-2px) scale(1.03); }
+    .btn-royal:active{ transform:scale(0.98); }
+
+    /* ===== Screens ===== */
+    .start-ui, .rule-ui{
+      position:absolute; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      z-index:50;
+    }
+    .start-ui{ text-align:center; }
+    .rule-ui{ display:none; }
+
+    /* ===== Rule page theme: sky-blue + silver card ===== */
+    .rule-silver-theme{
+      background:
+        radial-gradient(circle at 20% 18%, rgba(190,220,255,0.36), transparent 46%),
+        radial-gradient(circle at 78% 30%, rgba(255,255,255,0.22), transparent 55%),
+        radial-gradient(circle at 55% 88%, rgba(170,215,255,0.20), transparent 60%),
+        linear-gradient(135deg, #0b1630 0%, #0b2b52 55%, #07152c 100%);
+    }
+
+    .rule-bg-glow{
+      position:absolute; inset:-50px; z-index:0;
+      background:
+        radial-gradient(circle at 35% 30%, rgba(200,230,255,0.22), transparent 55%),
+        radial-gradient(circle at 75% 70%, rgba(255,255,255,0.10), transparent 55%);
+      filter:blur(12px);
+      animation:slowPulse 6.2s ease-in-out infinite;
+      opacity:0.95;
+    }
+
+    .glass-card-silver{
+      position:relative; z-index:2;
+      width:min(360px, 90%);
+      padding:22px 18px;
+      border-radius:22px;
+      background:
+        radial-gradient(circle at 20% 25%, rgba(255,255,255,0.55), transparent 55%),
+        radial-gradient(circle at 80% 35%, rgba(210,230,255,0.35), transparent 58%),
+        linear-gradient(135deg,
+          rgba(255,255,255,0.78) 0%,
+          rgba(235,242,255,0.62) 40%,
+          rgba(210,225,245,0.55) 70%,
+          rgba(255,255,255,0.50) 100%
+        );
+      border:1px solid rgba(255,255,255,0.35);
+      box-shadow:0 26px 85px rgba(0,0,0,0.55), 0 0 40px rgba(210,230,255,0.14);
+      color:#0b1630;
+      text-align:center;
+      backdrop-filter:blur(12px);
+      -webkit-backdrop-filter:blur(12px);
+    }
+
+    .rule-title{
+      font-family:'Cinzel Decorative';
+      font-size:22px;
+      margin:0 0 10px;
+      padding-bottom:10px;
+      border-bottom:2px solid rgba(11,22,48,0.20);
+      letter-spacing:1px;
+    }
+    .chips{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:10px; }
+    .chip{
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(11,22,48,0.14);
+      background:rgba(255,255,255,0.45);
+      font-size:12px;
+      font-weight:900;
+      color:#0b1630;
+    }
+
+    /* ===== Top HUD ===== */
+    #game-ui{
+      display:none;
+      position:absolute; top:20px; width:100%;
+      padding:0 25px; box-sizing:border-box;
+      z-index:20;
+      display:flex; justify-content:space-between;
+      color:#d4af37;
+    }
+
+    #weather-header{
+      position:absolute; top:108px; width:100%;
+      text-align:center;
+      font-family:'Cinzel Decorative';
+      font-size:20px;
+      z-index:25;
+      color:#fff;
+      letter-spacing:2px;
+      text-shadow:0 0 14px rgba(200,230,255,0.25);
+      display:none;
+      opacity:0.95;
+    }
+
+    /* ===== Overlays ===== */
+    #flash{
+      position:absolute; inset:0; z-index:80;
+      pointer-events:none;
+      background:rgba(255,255,255,0);
+      transition:background 0.08s ease;
+      mix-blend-mode:screen;
+    }
+    #flash.on{ background:rgba(255,255,255,0.28); }
+
+    /* Wrong hit red flash */
+    #damage-flash{
+      position:absolute; inset:0; z-index:90;
+      pointer-events:none;
+      background:rgba(255,0,0,0);
+      transition:background 0.06s ease;
+      mix-blend-mode:screen;
+    }
+    #damage-flash.on{ background:rgba(255,50,50,0.28); }
+
+    /* Optional UI scale impact */
+    .impact{ animation:imp 0.28s ease-out; }
+    @keyframes imp{ 0%{ transform:scale(1); } 50%{ transform:scale(0.96); } 100%{ transform:scale(1); } }
+
+    /* End screen */
+    .end-ui{
+      position:absolute; inset:0; display:none;
+      z-index:70;
+      align-items:center; justify-content:center;
+      background:rgba(0,0,0,0.86);
+      text-align:center;
+    }
+    .end-ui .panel{
+      width:min(360px, 88%);
+      padding:20px 18px;
+      border-radius:18px;
+      background:rgba(255,255,255,0.08);
+      border:1px solid rgba(255,255,255,0.16);
+      backdrop-filter:blur(10px);
+      -webkit-backdrop-filter:blur(10px);
+      box-shadow:0 24px 70px rgba(0,0,0,0.55);
+      color:#fff;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="game-container">
+    <div id="weather-header"></div>
+    <div id="flash"></div>
+    <div id="damage-flash"></div>
+
+    <canvas id="gameCanvas" width="420" height="650"></canvas>
+
+    <div id="game-ui">
+      <div style="font-size:22px; color:#fff;">
+        GOLD: <span id="score-val" style="color:#d4af37;">0</span>
+      </div>
+      <div style="text-align:right;">
+        <span style="font-family:'Dancing Script'; font-size:20px; color:#fff;">Developed By Poorva</span><br>
+        <span id="clock" style="font-size:24px; font-family:'Bungee'; color:#d4af37;">02:00</span>
+      </div>
+    </div>
+
+    <!-- Start -->
+    <div id="start-screen" class="start-ui glassy-theme">
+      <div class="bg-glow"></div>
+      <div class="glass-card">
+        <h1 class="castle-title">THE <span class="gold-glow">CASTLE</span> BALLOON CHALLENGE</h1>
+        <p style="font-family:'Dancing Script'; font-size:22px; margin:10px 0 0;">Developed By Poorva</p>
+        <button class="btn-royal" onclick="showRules()">ENTER THE CASTLE</button>
+      </div>
+    </div>
+
+    <!-- Rules -->
+    <div id="rules-screen" class="rule-ui rule-silver-theme">
+      <div class="rule-bg-glow"></div>
+      <div class="glass-card-silver">
+        <h2 class="rule-title">RULE BOOK 📜</h2>
+
+        <div class="chips">
+          <div class="chip">⏳ Aapke paas 2 mins hai</div>
+          <div class="chip">🌦️ Mausam badlega</div>
+        </div>
+
+        <p style="margin:14px 0 8px; font-size:14px; font-weight:900; color:#111;">
+        Pop the balloons in Indian Flag colors 🇮🇳 (Saffron, White, Navy Blue, Green)
+        </p>
+
+
+
+        <div style="display:flex; justify-content:center; margin:10px 0 12px;">
+          <div style="display:flex; flex-direction:column; height:62px; width:110px; border:1px solid rgba(0,0,0,0.20); border-radius:10px; overflow:hidden;">
+            <div style="background:#FF9933; flex:1;"></div>
+            <div style="background:#fff; flex:1; display:flex; justify-content:center; align-items:center; color:#000080; font-size:12px;">☸</div>
+            <div style="background:#138808; flex:1;"></div>
+          </div>
+        </div>
+
+        <p style="margin:0; font-size:14px;">
+          ✅ <b>Sahi</b>: <span style="color:#0f7a39; font-weight:900;">+10</span>
+          &nbsp; | &nbsp;
+          ❌ <b>Galat</b>: <span style="color:#c92828; font-weight:900;">-5</span>
+        </p>
+
+        <button class="btn-royal" style="margin-top:14px;" onclick="startGame()">
+          LET’S GO! ✨
+        </button>
+      </div>
+    </div>
+
+    <!-- End -->
+    <div id="end-screen" class="end-ui">
+      <div class="panel">
+        <h2 style="font-family:'Cinzel Decorative'; margin:0 0 8px;">GAME OVER</h2>
+        <p style="margin:0 0 10px; opacity:0.9;">Final GOLD: <b id="finalScore">0</b></p>
+        <button class="btn-royal" onclick="restartToRules()">Play Again</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const bgImg = new Image();
+    bgImg.src = "https://images.unsplash.com/photo-1605443791779-e2f6d26fef44?q=80&w=687&auto=format&fit=crop";
+
+    // Game state
+    let score = 0;
+    let timeLeft = 120;
+    let gameRunning = false;
+    let timerId = null;
+
+    // Entities/effects
+    let balloons = [];
+    let floatingTexts = [];
+    let rainDrops = [];
+    let embers = [];
+    let popParticles = [];
+    let wrongRings = [];
+    let wrongStamps = [];
+
+    // Real camera shake (earthquake + wrong balloon)
+    let shakeTime = 0;
+    let shakePower = 0;
+
+    // Weather
+    let currentEvent = "clear skies";
+    let eventIndex = 0;
+    const sequence = ["clear skies", "storm", "fire", "rain", "earthquake"];
+
+    // Flag colors
+    const flagColors = ["#FF9933", "#FFFFFF", "#138808", "#000080"];
+
+    // ===== AUDIO (pleasant continuous synth melody, weather tint) =====
+    let audioCtx = null;
+    let master = null, filter = null;
+    let padOsc = null, padGain = null;
+    let bassOsc = null, bassGain = null;
+    let melodyTimer = null;
+    let step = 0;
+
+    function ensureAudio(){
+      if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if(!master){
+        master = audioCtx.createGain();
+        master.gain.value = 0.18;
+
+        filter = audioCtx.createBiquadFilter();
+        filter.type = "lowpass";
+        filter.frequency.value = 2200;
+
+        filter.connect(master);
+        master.connect(audioCtx.destination);
+      }
+    }
+
+    function hzFromMidi(m){ return 440 * Math.pow(2, (m - 69) / 12); }
+
+    function playNote(freq, type, dur, vol, detune=0){
+      if(!audioCtx) return;
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = type;
+      o.frequency.value = freq;
+      o.detune.value = detune;
+
+      const t = audioCtx.currentTime;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(Math.max(0.0001, vol*0.35), t + Math.max(0.05, dur*0.6));
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+
+      o.connect(g);
+      g.connect(filter);
+      o.start();
+      o.stop(t + dur);
+    }
+
+    function stopMusic(){
+      if(melodyTimer){ clearInterval(melodyTimer); melodyTimer = null; }
+      step = 0;
+      try{
+        if(padGain) padGain.gain.setTargetAtTime(0.0001, audioCtx.currentTime, 0.12);
+        if(bassGain) bassGain.gain.setTargetAtTime(0.0001, audioCtx.currentTime, 0.12);
+      }catch(e){}
+      try{
+        if(padOsc) padOsc.stop(audioCtx.currentTime + 0.2);
+        if(bassOsc) bassOsc.stop(audioCtx.currentTime + 0.2);
+      }catch(e){}
+      padOsc = padGain = bassOsc = bassGain = null;
+    }
+
+    // simple cheerful melody (not copying any song)
+    const LEAD = [79,81,79,76, null, 72,74,76, 77,null, 76,74,72,null, 74,76];
+    const CHORDS = [60,67,69,65]; // C, G, Am, F
+
+    function applyWeatherTone(){
+      if(!audioCtx || !filter || !master) return;
+      let cutoff = 2200;
+      let vol = 0.18;
+
+      if(currentEvent === "rain"){ cutoff = 1700; vol = 0.17; }
+      if(currentEvent === "storm"){ cutoff = 1500; vol = 0.17; }
+      if(currentEvent === "fire"){ cutoff = 2600; vol = 0.19; }
+      if(currentEvent === "earthquake"){ cutoff = 1300; vol = 0.18; }
+
+      filter.frequency.setTargetAtTime(cutoff, audioCtx.currentTime, 0.25);
+      master.gain.setTargetAtTime(vol, audioCtx.currentTime, 0.25);
+    }
+
+    function startMusic(){
+      ensureAudio();
+      stopMusic();
+
+      // Pad
+      padOsc = audioCtx.createOscillator();
+      padGain = audioCtx.createGain();
+      padOsc.type = "sine";
+      padOsc.frequency.value = hzFromMidi(48);
+      padGain.gain.value = 0.0001;
+      padOsc.connect(padGain);
+      padGain.connect(filter);
+      padOsc.start();
+      padGain.gain.setTargetAtTime(0.04, audioCtx.currentTime, 0.25);
+
+      // Bass
+      bassOsc = audioCtx.createOscillator();
+      bassGain = audioCtx.createGain();
+      bassOsc.type = "triangle";
+      bassOsc.frequency.value = hzFromMidi(36);
+      bassGain.gain.value = 0.0001;
+      bassOsc.connect(bassGain);
+      bassGain.connect(filter);
+      bassOsc.start();
+      bassGain.gain.setTargetAtTime(0.028, audioCtx.currentTime, 0.25);
+
+      applyWeatherTone();
+
+      const tempoMs = 150;
+      melodyTimer = setInterval(() => {
+        if(!gameRunning) return;
+
+        const chordRoot = CHORDS[Math.floor((step/8) % CHORDS.length)];
+        padOsc.frequency.setTargetAtTime(hzFromMidi(chordRoot - 12), audioCtx.currentTime, 0.12);
+        bassOsc.frequency.setTargetAtTime(hzFromMidi(chordRoot - 24), audioCtx.currentTime, 0.10);
+
+        const m = LEAD[step % LEAD.length];
+        step++;
+
+        if(m !== null){
+          // lead
+          playNote(hzFromMidi(m), "triangle", 0.16, 0.045);
+          // tiny sparkle
+          if(Math.random() < 0.14) playNote(hzFromMidi(m+12), "sine", 0.06, 0.010, 6);
+        }
+
+        // weather "waves"
+        if(currentEvent === "rain" && Math.random() < 0.25){
+          playNote(988, "sine", 0.05, 0.008, 8);
+        }
+        if(currentEvent === "storm" && Math.random() < 0.12){
+          playNote(110, "sine", 0.10, 0.010);
+        }
+        if(currentEvent === "fire" && Math.random() < 0.18){
+          playNote(1319, "sine", 0.05, 0.008, 8);
+        }
+        if(currentEvent === "earthquake" && Math.random() < 0.20){
+          playNote(60, "triangle", 0.10, 0.010);
+        }
+
+      }, tempoMs);
+    }
+
+    // SFX
+    function sfxCorrect(){
+      playNote(880, "sine", 0.06, 0.020);
+      playNote(1320, "sine", 0.06, 0.012, 6);
+    }
+    function sfxWrong(){
+      // deep thud + harsh beep
+      playNote(70, "sine", 0.18, 0.030);
+      playNote(55, "triangle", 0.22, 0.022);
+      playNote(220, "square", 0.10, 0.020);
+      playNote(165, "square", 0.12, 0.018);
+    }
+
+    // ===== UI helpers =====
+    function setHUD(){
+      document.getElementById("score-val").innerText = score;
+      document.getElementById("clock").innerText =
+        `${Math.floor(timeLeft/60)}:${(timeLeft%60).toString().padStart(2,"0")}`;
+    }
+
+    function showRules(){
+      ensureAudio();
+      playNote(880, "sine", 0.07, 0.02);
+      document.getElementById("start-screen").style.display = "none";
+      document.getElementById("rules-screen").style.display = "flex";
+    }
+
+    function restartToRules(){
+      document.getElementById("end-screen").style.display = "none";
+      document.getElementById("rules-screen").style.display = "flex";
+    }
+
+    // ===== Weather visuals =====
+    function flashLightning(){
+      const f = document.getElementById("flash");
+      f.classList.add("on");
+      setTimeout(()=>f.classList.remove("on"), 80);
+      setTimeout(()=>f.classList.add("on"), 180);
+      setTimeout(()=>f.classList.remove("on"), 260);
+    }
+
+    function setWeatherHeader(text){
+      const h = document.getElementById("weather-header");
+      h.style.display = "block";
+      h.innerText = text.toUpperCase();
+    }
+
+
+
+    function updateWeather(){
+
+        // Change event FIRST
+        currentEvent = sequence[eventIndex];
+        eventIndex = (eventIndex + 1) % sequence.length;
+
+        // Reset shake by default
+        shakeTime = 0;
+        shakePower = 0;
+
+
+      if(currentEvent === "clear skies") setWeatherHeader("Clear Skies");
+      if(currentEvent === "storm"){ setWeatherHeader("Storm"); flashLightning(); }
+      if(currentEvent === "fire") setWeatherHeader("Fire");
+      if(currentEvent === "rain") setWeatherHeader("Heavy Rain");
+      if(currentEvent === "earthquake"){
+        setWeatherHeader("Earthquake");
+        shakeTime = 99999;
+        shakePower = 32;
+      }
+
+      applyWeatherTone();
+    }
+
+    // ===== Spawn =====
+    function spawnBalloon(i){
+      const randomColor = "#" + Math.floor(Math.random()*16777215).toString(16).padStart(6,"0");
+      balloons[i] = {
+        x: Math.random()*360 + 30,
+        y: -100 - Math.random()*500,
+        color: (Math.random() > 0.45) ? flagColors[Math.floor(Math.random()*4)] : randomColor,
+        speed: Math.random()*2 + 2
+      };
+    }
+
+    function resetEffects(){
+      floatingTexts = [];
+      popParticles = [];
+      wrongRings = [];
+      wrongStamps = [];
+      embers = [];
+
+      // heavy rain drops
+      rainDrops = [];
+      for(let i=0; i<260; i++){
+        rainDrops.push({
+          x: Math.random()*420,
+          y: Math.random()*650,
+          l: Math.random()*18 + 12,
+          s: Math.random()*14 + 10
+        });
+      }
+    }
+
+    function startGame(){
+      ensureAudio();
+
+      document.getElementById("rules-screen").style.display = "none";
+      document.getElementById("end-screen").style.display = "none";
+      document.getElementById("game-ui").style.display = "flex";
+
+      score = 0;
+      timeLeft = 120;
+      gameRunning = true;
+
+      currentEvent = "clear skies";
+      eventIndex = 1; // next after clear skies
+      setWeatherHeader("Clear Skies");
+      setHUD();
+
+      balloons = [];
+      for(let i=0;i<8;i++) spawnBalloon(i);
+
+      resetEffects();
+
+      startMusic();
+
+      if(timerId) clearInterval(timerId);
+      timerId = setInterval(()=>{
+        if(!gameRunning) return;
+        timeLeft--;
+        if(timeLeft <= 0){ endGame(); return; }
+        if(timeLeft % 15 === 0) updateWeather();
+        setHUD();
+      }, 1000);
+    }
+
+    function endGame(){
+      gameRunning = false;
+      if(timerId) clearInterval(timerId);
+      stopMusic();
+      document.getElementById("finalScore").innerText = score;
+      document.getElementById("end-screen").style.display = "flex";
+      playNote(784, "sine", 0.10, 0.02);
+      playNote(659, "sine", 0.12, 0.02);
+    }
+
+    // ===== Effects =====
+    function damageFlash(){
+      const d = document.getElementById("damage-flash");
+      d.classList.add("on");
+      setTimeout(()=>d.classList.remove("on"), 90);
+      setTimeout(()=>d.classList.add("on"), 160);
+      setTimeout(()=>d.classList.remove("on"), 230);
+    }
+
+    function createBurst(x,y,color){
+      for(let i=0;i<18;i++){
+        popParticles.push({
+          x,y,
+          vx:(Math.random()-0.5)*7,
+          vy:(Math.random()-0.7)*7,
+          life:26 + Math.random()*10,
+          r:2 + Math.random()*2.8,
+          color
+        });
+      }
+      for(let i=0;i<10;i++){
+        popParticles.push({
+          x,y,
+          vx:(Math.random()-0.5)*8,
+          vy:(Math.random()-0.6)*8,
+          life:16 + Math.random()*8,
+          r:1.3 + Math.random()*2,
+          color:"rgba(255,255,255,0.95)"
+        });
+      }
+    }
+
+    function createWrongRing(x,y){
+      wrongRings.push({x,y,radius:4,life:24,max:62});
+    }
+
+    function spawnWrongStamp(x,y){
+      wrongStamps.push({x,y,a:1,s:1});
+    }
+
+    function drawEffects(){
+      // burst particles
+      for(let i=popParticles.length-1;i>=0;i--){
+        const p = popParticles[i];
+        p.x += p.vx; p.y += p.vy; p.vy += 0.18; p.life -= 1;
+        const a = Math.max(0, Math.min(1, p.life/30));
+        ctx.globalAlpha = a;
+        ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+        if(p.life<=0) popParticles.splice(i,1);
+      }
+      ctx.globalAlpha = 1;
+
+      // wrong rings
+      for(let i=wrongRings.length-1;i>=0;i--){
+        const r = wrongRings[i];
+        r.radius += 3.2; r.life -= 1;
+        const a = Math.max(0, Math.min(1, r.life/24));
+        ctx.globalAlpha = a;
+        ctx.strokeStyle = "rgba(255,60,60,0.95)";
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(r.x,r.y,r.radius,0,Math.PI*2); ctx.stroke();
+        ctx.strokeStyle = "rgba(255,120,120,0.55)";
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(r.x,r.y,Math.max(0,r.radius-10),0,Math.PI*2); ctx.stroke();
+        if(r.life<=0 || r.radius>r.max) wrongRings.splice(i,1);
+      }
+      ctx.globalAlpha = 1;
+
+      // WRONG big X stamp
+      for(let i=wrongStamps.length-1;i>=0;i--){
+        const w = wrongStamps[i];
+        w.a -= 0.035;
+        w.s += 0.02;
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, w.a);
+        ctx.translate(w.x, w.y);
+        ctx.scale(w.s, w.s);
+        ctx.rotate(Math.sin(Date.now()/60)*0.03);
+
+        ctx.lineWidth = 10;
+        ctx.strokeStyle = "rgba(255, 40, 40, 0.95)";
+        ctx.shadowColor = "rgba(255,40,40,0.6)";
+        ctx.shadowBlur = 18;
+
+        ctx.beginPath();
+        ctx.moveTo(-22,-22); ctx.lineTo(22,22);
+        ctx.moveTo(22,-22); ctx.lineTo(-22,22);
+        ctx.stroke();
+        ctx.restore();
+
+        if(w.a<=0) wrongStamps.splice(i,1);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // ===== Weather drawing =====
+    function drawHeavyRain(isStorm=false){
+      const wind = isStorm ? 7 : 4;
+
+      ctx.strokeStyle = "rgba(200,230,255,0.88)";
+      ctx.lineWidth = isStorm ? 2.4 : 2.0;
+
+      for(const d of rainDrops){
+        ctx.beginPath();
+        ctx.moveTo(d.x, d.y);
+        ctx.lineTo(d.x - wind, d.y + d.l);
+        ctx.stroke();
+
+        d.x -= wind;
+        d.y += d.s;
+
+        // splash at bottom
+        if(d.y > 650){
+          if(Math.random() < 0.25){
+            ctx.globalAlpha = 0.6;
+            ctx.beginPath();
+            ctx.arc(d.x, 645, 3 + Math.random()*3, 0, Math.PI*2);
+            ctx.strokeStyle = "rgba(200,230,255,0.6)";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+          }
+          d.y = -20;
+          d.x = Math.random()*420;
+        }
+        if(d.x < -30) d.x = 420 + Math.random()*30;
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function drawFire(){
+      // base glow
+      ctx.globalAlpha = 0.55;
+      const grad = ctx.createRadialGradient(210,650,20, 210,650,260);
+      grad.addColorStop(0, "rgba(255,170,0,0.55)");
+      grad.addColorStop(0.5, "rgba(255,60,0,0.25)");
+      grad.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0,420,420,230);
+      ctx.globalAlpha = 1;
+
+      // spawn embers
+      for(let i=0;i<6;i++){
+        embers.push({
+          x: Math.random()*420,
+          y: 650,
+          vx: (Math.random()-0.5)*1.2,
+          vy: -(Math.random()*5+2),
+          a: 1
+        });
+      }
+
+      // draw embers
+      for(let i=embers.length-1;i>=0;i--){
+        const e = embers[i];
+        e.x += e.vx;
+        e.y += e.vy;
+        e.vy -= 0.05;
+        e.a -= 0.02;
+
+        ctx.globalAlpha = Math.max(0, e.a);
+        ctx.fillStyle = "rgba(255,180,60,1)";
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, 2.2, 0, Math.PI*2);
+        ctx.fill();
+
+        if(e.a<=0 || e.y<-20) embers.splice(i,1);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function drawStormTint(){
+      // darken + slight fog for storm (no rain here unless you want)
+      ctx.globalAlpha = 0.18;
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0,0,420,650);
+      ctx.globalAlpha = 0.12;
+      ctx.fillStyle = "rgba(200,230,255,1)";
+      ctx.fillRect(0,0,420,650);
+      ctx.globalAlpha = 1;
+    }
+
+    // ===== MAIN LOOP =====
+    function animate(){
+      ctx.clearRect(0,0,420,650);
+
+      // Camera shake (earthquake + wrong hit)
+      let sx = 0, sy = 0;
+      if(shakeTime > 0){
+        sx = (Math.random()-0.5) * shakePower;
+        sy = (Math.random()-0.5) * shakePower;
+        if (currentEvent !== "earthquake") {
+
+        shakeTime--;
+        shakePower *= 0.96;
+      }
+    }
+      ctx.save();
+      ctx.translate(sx, sy);
+
+      // background
+      if(bgImg.complete) ctx.drawImage(bgImg, 0, 0, 420, 650);
+
+      if(gameRunning){
+        // Weather visuals behind balloons
+        if(currentEvent === "storm") drawStormTint();
+        if(currentEvent === "rain") drawHeavyRain(false);
+        if(currentEvent === "fire") drawFire();
+
+        // floating texts
+        for(let i=floatingTexts.length-1;i>=0;i--){
+          const f = floatingTexts[i];
+          ctx.globalAlpha = f.a;
+          ctx.fillStyle = f.c;
+          ctx.font = "bold 38px Bungee";
+          ctx.fillText(f.msg, f.x, f.y);
+          f.y -= 2.5; f.a -= 0.02;
+          if(f.a <= 0) floatingTexts.splice(i,1);
+        }
+        ctx.globalAlpha = 1;
+
+        // balloons
+        balloons.forEach((b,i)=>{
+          let dX = b.x;
+
+          // storm wind wiggle
+          if(currentEvent === "storm") dX += Math.sin(Date.now()/150)*45;
+
+          // speed multipliers
+          const speedMult =
+            (currentEvent === "rain") ? 3.2 :
+            (currentEvent === "storm") ? 2.2 :
+            (currentEvent === "fire") ? 2.0 :
+            (currentEvent === "earthquake") ? 2.6 : 1;
+
+          b.y += b.speed * speedMult;
+
+          // golden string
+          ctx.beginPath();
+          ctx.moveTo(dX, b.y+25);
+          ctx.lineTo(dX + Math.sin(Date.now()/300)*10, b.y+75);
+          ctx.strokeStyle = "#d4af37";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          // balloon body
+          ctx.beginPath();
+          ctx.ellipse(dX, b.y, 20, 26, 0, 0, Math.PI*2);
+          ctx.fillStyle = b.color;
+          ctx.fill();
+
+          // chakra for navy
+          if(b.color === "#000080"){
+            ctx.fillStyle = "#fff";
+            ctx.font = "10px Arial";
+            ctx.fillText("☸", dX-5, b.y+5);
+          }
+
+          // shine
+          ctx.beginPath();
+          ctx.ellipse(dX-7, b.y-10, 5, 8, 0.5, 0, Math.PI*2);
+          ctx.fillStyle = "rgba(255,255,255,0.4)";
+          ctx.fill();
+
+          if(b.y > 700) spawnBalloon(i);
+        });
+
+        // effects above balloons
+        drawEffects();
+      }
+
+      ctx.restore();
+      requestAnimationFrame(animate);
+    }
+
+    // ===== INPUT =====
+    function handleShot(clientX, clientY){
+      if(!gameRunning) return;
+      const rect = canvas.getBoundingClientRect();
+      const mx = clientX - rect.left;
+      const my = clientY - rect.top;
+
+      balloons.forEach((b,i)=>{
+        let dX = b.x + (currentEvent==="storm" ? Math.sin(Date.now()/150)*45 : 0);
+
+        if(Math.sqrt((mx-dX)**2 + (my-b.y)**2) < 45){
+          const isFlag = flagColors.includes(b.color);
+
+          if(isFlag){
+            sfxCorrect();
+            createBurst(mx,my,b.color);
+            score += 10;
+            floatingTexts.push({x:mx-25, y:my, msg:"+10", c:"#39FF14", a:1});
+          } else {
+            sfxWrong();
+            createWrongRing(mx,my);
+            spawnWrongStamp(mx,my);
+            damageFlash();
+
+            score -= 5;
+            floatingTexts.push({x:mx-25, y:my, msg:"-5", c:"#ff0000", a:1});
+
+            // HEAVY shake for wrong hit (even if not earthquake)
+            shakeTime = 18;
+            shakePower = 14;
+
+            // small UI impact bump
+            const c = document.getElementById("game-container");
+            c.classList.add("impact");
+            setTimeout(()=>c.classList.remove("impact"), 260);
+          }
+
+          setHUD();
+          spawnBalloon(i);
+        }
+      });
+    }
+
+    canvas.addEventListener("mousedown", e => handleShot(e.clientX, e.clientY));
+    canvas.addEventListener("touchstart", e => {
+      if(!e.touches?.length) return;
+      const t = e.touches[0];
+      handleShot(t.clientX, t.clientY);
+    }, {passive:true});
+
+    animate();
+  </script>
+</body>
+</html>
