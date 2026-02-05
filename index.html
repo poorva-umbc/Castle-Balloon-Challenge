@@ -13,17 +13,29 @@
       background:#000; overflow:hidden; font-family:'Cinzel', serif;
     }
 
-    #game-container{
-      position:relative;
-      width:420px; height:650px;
-      border:6px solid #d4af37;
-      box-shadow:0 0 80px rgba(212,175,55,0.35);
-      background:#000;
-      overflow:hidden;
-      isolation:isolate;
-    }
+    #game-container {
+        position: relative; 
+        border: 6px solid #d4af37; 
+        width: 95vw; 
+        max-width: 420px; 
+        height: auto; 
+        aspect-ratio: 420 / 650; 
+        max-height: 92vh; 
+        box-shadow: 0 0 80px rgba(212, 175, 55, 0.4); 
+        background: #000;
+        overflow: hidden; 
+        transform-style: preserve-3d; 
+        isolation: isolate;
+        margin: auto; /* Screen ke beech mein rahega */
+        }
 
-    canvas{ display:block; cursor:crosshair; touch-action:manipulation; }
+    canvas { 
+        display: block; 
+        width: 100%; 
+        height: 100%; 
+        cursor: crosshair; 
+        touch-action: manipulation; 
+        }
 
     /* ===== Start theme (gold/black glass) ===== */
     .glassy-theme{
@@ -903,8 +915,10 @@
     function handleShot(clientX, clientY){
       if(!gameRunning) return;
       const rect = canvas.getBoundingClientRect();
-      const mx = clientX - rect.left;
-      const my = clientY - rect.top;
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const mx = (clientX - rect.left) * scaleX;
+      const my = (clientY - rect.top) * scaleY;
 
       balloons.forEach((b,i)=>{
         let dX = b.x + (currentEvent==="storm" ? Math.sin(Date.now()/150)*45 : 0);
